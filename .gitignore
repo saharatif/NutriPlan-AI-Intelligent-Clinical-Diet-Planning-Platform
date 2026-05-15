@@ -216,3 +216,11 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# macOS
+.DS_Store
+
+# Office documents (plan source files)
+*.docx
+*.xlsx
+*.pptx
