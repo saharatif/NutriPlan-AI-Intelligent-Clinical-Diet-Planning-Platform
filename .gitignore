@@ -157,6 +157,14 @@ ENV/
 env.bak/
 venv.bak/
 
+# Frontend
+node_modules/
+dist/
+!frontend/src/lib/
+
+# Local databases
+*.db
+
 # Spyder project settings
 .spyderproject
 .spyproject

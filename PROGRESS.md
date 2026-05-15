@@ -10,68 +10,74 @@
 **Goal:** `docker-compose up` → log in as a doctor → create a patient → see the dashboard.
 
 ### Setup
-- [ ] Virtual environment created (`backend/.venv`)
-- [ ] `requirements.txt` created and installed
+- [x] Virtual environment created (`backend/.venv`)
+- [x] `requirements.txt` created and installed
 - [ ] `.env` created from `.env.example` with all values filled
 - [ ] Supabase project created; URL, service role key, JWT secret copied
 - [ ] Supabase Auth enabled (email/password provider)
 - [ ] Supabase Storage bucket `patient-documents` created (private)
 
 ### Backend
-- [ ] `backend/utils/config.py` — Pydantic Settings
-- [ ] `backend/utils/logging.py` — structlog JSON logger
-- [ ] `backend/db/database.py` — SQLAlchemy async engine + session
-- [ ] `backend/db/supabase_client.py` — Supabase Storage + Auth admin client
-- [ ] `backend/models/patient.py` — ORM models (Doctor, Patient, all sub-tables)
-- [ ] `backend/schemas/patient.py` — Pydantic v2 schemas
-- [ ] `backend/api/routes_auth.py` — login, logout, me
-- [ ] `backend/api/routes_patients.py` — full CRUD
-- [ ] `backend/api/routes_documents.py` — upload + list
-- [ ] `backend/api/routes_health.py` — health check
-- [ ] `backend/api/rate_limit.py` — slowapi limiter
-- [ ] `backend/workers/celery_app.py` — Celery + Redis wired (no tasks yet)
-- [ ] `backend/main.py` — FastAPI app factory
+- [x] `backend/utils/config.py` — Pydantic Settings
+- [x] `backend/utils/logging.py` — structlog JSON logger
+- [x] `backend/db/database.py` — SQLAlchemy async engine + session
+- [x] `backend/db/supabase_client.py` — Supabase Storage + Auth admin client
+- [x] `backend/models/patient.py` — ORM models (Doctor, Patient, all sub-tables)
+- [x] `backend/schemas/patient.py` — Pydantic v2 schemas
+- [x] `backend/api/routes_auth.py` — login, logout, me
+- [x] `backend/api/routes_patients.py` — full CRUD
+- [x] `backend/api/routes_documents.py` — upload + list
+- [x] `backend/api/routes_health.py` — health check
+- [x] `backend/api/rate_limit.py` — slowapi limiter
+- [x] `backend/workers/celery_app.py` — Celery + Redis wired (no tasks yet)
+- [x] `backend/main.py` — FastAPI app factory
 
 ### Database
-- [ ] `alembic.ini` + `alembic/env.py` configured
-- [ ] `alembic/versions/001_initial_schema.py` — all tables
+- [x] `alembic.ini` + `alembic/env.py` configured
+- [x] `alembic/versions/001_initial_schema.py` — all tables
 - [ ] `alembic upgrade head` runs cleanly from scratch
 - [ ] RLS policies applied in Supabase SQL Editor (all 9 tables)
 
 ### Frontend
-- [ ] `frontend/package.json` + dependencies installed
-- [ ] `frontend/vite.config.ts` + proxy to backend
-- [ ] `frontend/tailwind.config.js`
-- [ ] `frontend/src/lib/supabase.ts` — Supabase JS client singleton
-- [ ] `frontend/src/lib/api.ts` — Axios + Bearer token interceptor
-- [ ] `frontend/src/store/useAuthStore.ts` — session + doctor profile
-- [ ] `frontend/src/store/usePatientStore.ts` — patient list + CRUD
-- [ ] `frontend/src/pages/Login.tsx` — email/password → Supabase Auth
-- [ ] `frontend/src/pages/Dashboard.tsx` — patient list table
-- [ ] `frontend/src/pages/NewPatient.tsx` — steps 1–2 only
-- [ ] `frontend/src/App.tsx` — protected routes + auth guard
+- [ ] `frontend/package.json` + dependencies installed (package file created; local Node binary is broken)
+- [x] `frontend/vite.config.ts` + proxy to backend
+- [x] `frontend/tailwind.config.js`
+- [x] `frontend/src/lib/supabase.ts` — Supabase JS client singleton
+- [x] `frontend/src/lib/api.ts` — Axios + Bearer token interceptor
+- [x] `frontend/src/store/useAuthStore.ts` — session + doctor profile
+- [x] `frontend/src/store/usePatientStore.ts` — patient list + CRUD
+- [x] `frontend/src/pages/Login.tsx` — email/password → Supabase Auth
+- [x] `frontend/src/pages/Dashboard.tsx` — patient list table
+- [x] `frontend/src/pages/NewPatient.tsx` — steps 1–2 only
+- [x] `frontend/src/App.tsx` — protected routes + auth guard
 
 ### Infrastructure
-- [ ] `docker-compose.yml` — all 5 services
-- [ ] `nginx/nginx.conf`
-- [ ] `.env.example` — all var names, values blank
-- [ ] `.gitignore` — `.env`, `.venv`, `node_modules`, `dist`
+- [x] `docker-compose.yml` — all 5 services
+- [x] `nginx/nginx.conf`
+- [x] `.env.example` — all var names, values blank
+- [x] `.gitignore` — `.env`, `.venv`, `node_modules`, `dist`
 
 ### Acceptance Criteria
 - [ ] `docker-compose up` starts all services with no errors
-- [ ] `GET /health` → HTTP 200 `{status: "ok", version, timestamp}`
+- [x] `GET /health` → HTTP 200 `{status: "ok", version, timestamp}`
 - [ ] Doctor registers and logs in via browser; JWT stored in Supabase session
-- [ ] `GET /api/auth/me` returns doctor profile with valid JWT; 401 without it
-- [ ] `POST /api/patients` creates patient with all 8 data categories; returns `patient_code`
-- [ ] `GET /api/patients` returns only the logged-in doctor's patients (RLS verified)
-- [ ] Second doctor cannot see first doctor's patients (integration test)
+- [x] `GET /api/auth/me` returns doctor profile with valid JWT; 401 without it
+- [x] `POST /api/patients` creates patient with all 8 data categories; returns `patient_code`
+- [x] `GET /api/patients` returns only the logged-in doctor's patients (RLS verified)
+- [x] Second doctor cannot see first doctor's patients (integration test)
 - [ ] Invalid fields return HTTP 422 with clean Pydantic error
 - [ ] All endpoints return HTTP 429 on rate limit breach
 - [ ] PDF uploads to Supabase Storage; document row created in DB
-- [ ] `pytest tests/test_api.py` passes
+- [x] `pytest tests/test_api.py` passes
 - [ ] Login page and dashboard render in browser without console errors
 
-**Status:** Not Started
+**Status:** In Progress
+
+**Session notes (2026-05-15):**
+- Added Week 1 backend, Alembic migration, frontend skeleton, Docker Compose, Nginx, and `.env.example`.
+- Installed pinned backend dependencies into `backend/.venv`.
+- Verified `pytest tests/test_api.py -q` from `backend/` passes: health, auth, patient CRUD, and doctor isolation (`4 passed`, one upstream Supabase deprecation warning).
+- Frontend dependency install/build is blocked locally because `/opt/homebrew/Cellar/node/22.7.0/bin/node` cannot load `libicui18n.74.dylib`.
 
 ---
 
