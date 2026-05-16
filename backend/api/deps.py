@@ -1,5 +1,7 @@
 import uuid
+from functools import lru_cache
 
+import httpx
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
@@ -12,17 +14,46 @@ from utils.config import settings
 bearer_scheme = HTTPBearer(auto_error=False)
 
 
+@lru_cache(maxsize=1)
+def _fetch_jwks() -> list[dict]:
+    """Fetch Supabase's public JWKS once and cache it (ES256 verification)."""
+    url = f"{settings.SUPABASE_URL}/auth/v1/.well-known/jwks.json"
+    response = httpx.get(url, timeout=10)
+    response.raise_for_status()
+    return response.json().get("keys", [])
+
+
 def _decode_jwt(token: str) -> dict:
-    """Decode and validate a Supabase-issued JWT. Raises 401 on any failure."""
+    """
+    Decode a Supabase-issued JWT.  Supabase now signs tokens with ES256 by
+    default (newer projects) and HS256 for legacy projects.  We detect the
+    algorithm from the token header and verify accordingly.
+    """
     try:
-        return jwt.decode(
-            token,
-            settings.SUPABASE_JWT_SECRET,
-            algorithms=["HS256"],
-            audience="authenticated",
+        header = jwt.get_unverified_header(token)
+        alg = header.get("alg", "HS256")
+
+        if alg == "ES256":
+            # New Supabase — verify against the project's public JWKS
+            jwks = _fetch_jwks()
+            kid = header.get("kid")
+            key = next((k for k in jwks if k.get("kid") == kid), jwks[0] if jwks else None)
+            if key is None:
+                raise JWTError("No matching key in JWKS")
+            return jwt.decode(token, key, algorithms=["ES256"], audience="authenticated")
+        else:
+            # Legacy Supabase — verify with the shared JWT secret (HS256)
+            return jwt.decode(
+                token,
+                settings.SUPABASE_JWT_SECRET,
+                algorithms=["HS256"],
+                audience="authenticated",
+            )
+    except (JWTError, KeyError, ValueError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Invalid bearer token: {exc}",
         )
-    except (JWTError, KeyError, ValueError):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid bearer token")
 
 
 async def get_current_doctor(
@@ -41,7 +72,6 @@ async def get_current_doctor(
 
     doctor = await db.get(Doctor, doctor_id)
     if doctor is None:
-        # Doctor has a valid Supabase JWT but has never called POST /api/auth/login.
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Doctor profile not found. Call POST /api/auth/login first.",

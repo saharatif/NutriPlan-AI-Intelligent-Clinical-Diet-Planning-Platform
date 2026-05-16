@@ -3,6 +3,7 @@ import uuid
 from functools import partial
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
+from celery.result import AsyncResult
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,6 +14,8 @@ from db.supabase_client import get_supabase_client
 from models.patient import Doctor, Patient, PatientDocument
 from schemas.patient import DocumentRead
 from utils.config import settings
+from workers.celery_app import celery_app
+from workers.task_ocr import process_blood_test_pdf
 
 router = APIRouter(prefix="/api/patients/{patient_id}/documents", tags=["documents"])
 
@@ -98,3 +101,47 @@ async def list_documents(
         .order_by(PatientDocument.uploaded_at.desc())
     )
     return list(result.scalars())
+
+
+@router.post("/{document_id}/process")
+@limiter.limit("20/minute")
+async def process_document(
+    request: Request,
+    patient_id: uuid.UUID,
+    document_id: uuid.UUID,
+    doctor: Doctor = Depends(get_current_doctor),
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, str]:
+    await _assert_patient_owner(db, doctor.id, patient_id)
+    document = await db.get(PatientDocument, document_id)
+    if document is None or document.patient_id != patient_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+    document.ocr_status = "queued"
+    document.ocr_error = None
+    await db.commit()
+    task = process_blood_test_pdf.delay(str(document_id))
+    return {"task_id": task.id}
+
+
+@router.get("/{document_id}/status")
+@limiter.limit("60/minute")
+async def document_status(
+    request: Request,
+    patient_id: uuid.UUID,
+    document_id: uuid.UUID,
+    doctor: Doctor = Depends(get_current_doctor),
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, str | bool | None]:
+    await _assert_patient_owner(db, doctor.id, patient_id)
+    document = await db.get(PatientDocument, document_id)
+    if document is None or document.patient_id != patient_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+    task_id = request.query_params.get("task_id")
+    task_state = AsyncResult(task_id, app=celery_app).state.lower() if task_id else None
+    return {
+        "document_id": str(document.id),
+        "status": document.ocr_status,
+        "task_status": task_state,
+        "ocr_processed": document.ocr_processed,
+        "error": document.ocr_error,
+    }

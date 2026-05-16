@@ -6,6 +6,8 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from db.database import Base
+from models import diet_plan  # noqa: F401
+from models import medical_profile  # noqa: F401
 from models import patient  # noqa: F401
 from utils.config import settings
 

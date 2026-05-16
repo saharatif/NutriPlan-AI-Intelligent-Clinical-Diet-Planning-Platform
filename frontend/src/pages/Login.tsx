@@ -36,8 +36,9 @@ export default function Login() {
     <main className="auth-screen">
       <section className="auth-showcase" aria-hidden="true">
         <div className="auth-showcase-copy">
-          <span className="badge badge-warning">Clinical workspace</span>
+          <span className="badge badge-success">Secure · Clinical · AI-powered</span>
           <h1>NutriPlan AI</h1>
+          <p>Intelligent diet planning for clinical nutrition professionals. Generate personalised, allergen-safe meal plans from patient blood reports in minutes.</p>
         </div>
       </section>
       <section className="checkout-summary login-panel">

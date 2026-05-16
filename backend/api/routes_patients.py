@@ -76,6 +76,18 @@ async def create_patient(
     _replace_children(patient, payload)
     db.add(patient)
     await db.commit()
+
+    # If any clinical data was provided, build the medical profile and embed it
+    # into Pinecone immediately — before any PDFs are uploaded.
+    has_clinical_data = any([
+        payload.conditions,
+        payload.allergens,
+        payload.medications,
+    ])
+    if has_clinical_data:
+        from workers.task_medical_profile import build_medical_profile
+        build_medical_profile.delay(str(patient.id))
+
     return await _get_patient_or_404(db, doctor.id, patient.id)
 
 

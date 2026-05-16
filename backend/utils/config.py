@@ -31,6 +31,9 @@ class Settings(BaseSettings):
 
     # OpenAI
     OPENAI_API_KEY: str = ""
+    OPENAI_DIET_MODEL: str = "gpt-4o"
+    DIET_PLAN_GENERATION_PROVIDER: str = "openai"  # "openai" | "deterministic"
+    OPENAI_DIET_TIMEOUT_SECONDS: int = 45
 
     # Mistral
     MISTRAL_API_KEY: str = ""

@@ -1,0 +1,12 @@
+{
+  "milk": ["dairy", "whey", "casein", "lactose", "butter", "cream", "cheese", "yogurt"],
+  "dairy": ["milk", "whey", "casein", "lactose", "butter", "cream", "cheese", "yogurt"],
+  "peanut": ["peanuts", "groundnut", "arachis oil", "peanut butter"],
+  "peanuts": ["peanut", "groundnut", "arachis oil", "peanut butter"],
+  "egg": ["eggs", "albumin", "mayonnaise"],
+  "eggs": ["egg", "albumin", "mayonnaise"],
+  "gluten": ["wheat", "barley", "rye", "malt", "semolina"],
+  "soy": ["soya", "soybean", "edamame", "tofu", "tempeh"],
+  "tree nut": ["almond", "cashew", "walnut", "hazelnut", "pistachio", "pecan"],
+  "shellfish": ["shrimp", "prawn", "crab", "lobster", "crayfish"]
+}

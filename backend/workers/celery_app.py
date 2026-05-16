@@ -14,3 +14,11 @@ celery_app.conf.update(
     accept_content=["json"],
     timezone="UTC",
 )
+
+celery_app.conf.update(
+    include=[
+        "workers.task_ocr",
+        "workers.task_medical_profile",
+        "workers.task_diet_plan",
+    ]
+)

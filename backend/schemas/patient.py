@@ -79,6 +79,9 @@ class DocumentRead(BaseModel):
     storage_path: str
     content_type: str
     size_bytes: int
+    ocr_status: str
+    ocr_processed: bool
+    ocr_error: str | None = None
     uploaded_at: datetime
 
 

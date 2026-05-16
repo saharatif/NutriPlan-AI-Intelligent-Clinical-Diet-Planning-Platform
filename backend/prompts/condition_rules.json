@@ -1,0 +1,20 @@
+{
+  "hypertension": {
+    "avoid": [],
+    "limit": ["sodium", "processed foods"],
+    "prefer": ["potassium-rich vegetables", "whole grains"],
+    "note": "low sodium"
+  },
+  "type 2 diabetes": {
+    "avoid": ["sugary drinks"],
+    "limit": ["refined carbohydrates"],
+    "prefer": ["high-fiber meals", "lean protein"],
+    "note": "steady carbohydrate distribution"
+  },
+  "hypothyroid": {
+    "avoid": ["soy"],
+    "limit": [],
+    "prefer": ["selenium-rich foods"],
+    "note": "soy avoided for thyroid medication timing"
+  }
+}

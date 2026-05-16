@@ -1,0 +1,18 @@
+{
+  "statin": {
+    "avoid": ["grapefruit"],
+    "note": "avoid grapefruit with statin therapy"
+  },
+  "warfarin": {
+    "limit": ["large swings in vitamin K"],
+    "note": "keep vitamin K intake consistent"
+  },
+  "levothyroxine": {
+    "limit": ["calcium near dose", "iron near dose", "soy"],
+    "note": "separate binding foods and supplements from dosing window"
+  },
+  "metformin": {
+    "prefer": ["balanced carbohydrates"],
+    "note": "carbohydrates distributed across meals"
+  }
+}

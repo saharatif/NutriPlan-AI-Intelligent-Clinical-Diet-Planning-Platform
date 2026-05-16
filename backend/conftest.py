@@ -12,3 +12,19 @@ os.environ.setdefault("SUPABASE_JWT_SECRET", "test-secret-for-pytest-minimum-32-
 os.environ.setdefault("SUPABASE_URL", "https://test.supabase.co")
 os.environ.setdefault("SUPABASE_SERVICE_ROLE_KEY", "test-service-role-key")
 os.environ.setdefault("SUPABASE_ANON_KEY", "test-anon-key")
+os.environ["OPENAI_API_KEY"] = ""
+os.environ["DIET_PLAN_GENERATION_PROVIDER"] = "deterministic"
+os.environ["MISTRAL_API_KEY"] = ""
+
+# Patch RecipeService.lookup_recipe_url so tests never hit the network.
+# The patch is applied at import time before any test collects.
+from unittest.mock import AsyncMock, patch as _patch  # noqa: E402
+
+_patch(
+    "services.recipe_service.RecipeService.lookup_recipe_url",
+    new=AsyncMock(return_value="https://www.themealdb.com/meal/52772"),
+).start()
+
+# Prevent Celery from trying to connect to Redis during tests
+from unittest.mock import MagicMock as _MagicMock  # noqa: E402
+_patch("workers.task_medical_profile.build_medical_profile.delay", new=_MagicMock()).start()

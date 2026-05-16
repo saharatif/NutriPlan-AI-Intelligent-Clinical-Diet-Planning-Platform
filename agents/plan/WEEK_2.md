@@ -10,16 +10,17 @@ Upload a blood-test PDF → Celery processes it with Mistral OCR → structured 
 ### Backend
 | File | Purpose |
 |---|---|
-| `backend/services/ocr_service.py` | Call Mistral OCR API, parse response into structured blood markers / allergens / conditions |
+| `backend/services/ocr_service.py` | Mistral OCR via base64 `document_url` JSON body (not multipart); parses blood markers, allergens, conditions |
 | `backend/services/medical_profile_service.py` | Normalise conditions, expand allergen synonyms, resolve medication interactions, build `nutrition_constraints`, upsert `medical_profiles` |
-| `backend/services/embedding_service.py` | Build embedding text from medical profile → OpenAI `text-embedding-3-small` → upsert Pinecone (or pgvector) |
-| `backend/services/audit_service.py` | `log(doctor_id, patient_id, event_type, metadata)` → insert into `audit_logs` |
-| `backend/workers/task_ocr.py` | Celery task: `process_blood_test_pdf(document_id)` — download from Storage → OCR → parse → save markers → trigger profile build |
+| `backend/services/embedding_service.py` | Medical profile embedding (single vector) + document chunker + batch embed → upsert to Pinecone or pgvector |
+| `backend/services/audit_service.py` | `log(doctor_id, patient_id, event_type: AuditEvent, metadata)` → insert into `audit_logs` |
+| `backend/workers/task_ocr.py` | Celery task: OCR → parse → save markers → chunk + embed document → build medical profile |
 | `backend/workers/task_medical_profile.py` | Celery task: `build_medical_profile(patient_id)` — can be triggered standalone |
 | `backend/api/routes_medical_profile.py` | `POST /build`, `GET /`, `PUT /` for medical profile |
-| `backend/models/medical_profile.py` | SQLAlchemy ORM: BloodTestResult, OcrResult, MedicalProfile |
+| `backend/models/medical_profile.py` | SQLAlchemy ORM: BloodTestResult, OcrResult, MedicalProfile, PatientVector |
 | `backend/schemas/medical_profile.py` | Pydantic v2 schemas for all new models |
-| `backend/db/pinecone_client.py` | Abstraction: `upsert(patient_id, vector, metadata)`, `query(vector, top_k)` — works for both Pinecone and pgvector |
+| `backend/db/pinecone_client.py` | Dual-backend abstraction: pgvector (default, JSON storage) or Pinecone SDK; `upsert`, `query`, `upsert_document_chunks`, `query_document_chunks` |
+| `backend/utils/clinical_rules.py` | Shared `CONDITION_ALIASES` + `KNOWN_ALLERGENS` — single source of truth for both OCR and Medical Profile services |
 | `data/allergen_synonyms.json` | Open Food Facts taxonomy — loaded at startup, never fetched at runtime |
 | `tests/test_ocr_service.py` | Unit tests with a fixture PDF |
 | `tests/test_medical_profile_service.py` | Unit tests: normalisation, synonym expansion, constraint builder |
@@ -31,6 +32,46 @@ Upload a blood-test PDF → Celery processes it with Mistral OCR → structured 
 | `frontend/src/components/OCRResultViewer.tsx` | Table: marker name, value, unit, reference range, abnormal flag |
 | `frontend/src/components/MedicalProfileCard.tsx` | Shows conditions, allergens (expanded), medications, nutrition constraints |
 | `frontend/src/components/AllergenBadge.tsx` | Colour-coded chip: intolerance=yellow, allergy=orange, anaphylactic=red |
+
+---
+
+## Mistral OCR API Format
+
+Mistral OCR requires the document as a **base64-encoded data URL** in a JSON body — not multipart. Sending multipart returns 422.
+
+```python
+import base64
+b64 = base64.standard_b64encode(pdf_bytes).decode()
+response = await client.post(
+    "https://api.mistral.ai/v1/ocr",
+    headers={"Authorization": f"Bearer {MISTRAL_API_KEY}", "Content-Type": "application/json"},
+    json={
+        "model": "mistral-ocr-latest",
+        "document": {"type": "document_url", "document_url": f"data:application/pdf;base64,{b64}"},
+    },
+)
+```
+
+---
+
+## Chunker — Why It Is Needed
+
+Blood-test PDFs are multi-page documents (8–40 KB of extracted text). Embedding the entire document as a single vector dilutes the clinical signal — a query for "Ferritin" returns the whole document instead of the specific row. The chunker splits OCR text into focused 400-character windows with 80-character overlap, snapping boundaries to the nearest newline so no marker row is split across chunks.
+
+```
+Chunking parameters (embedding_service.py):
+  CHUNK_SIZE    = 400 chars   (~100 tokens — well within text-embedding-3-small limit)
+  CHUNK_OVERLAP = 80  chars   (keeps context across chunk boundaries)
+  Boundary snap: rfind('\n') in second half of chunk
+```
+
+Each chunk is embedded independently and stored in Pinecone with:
+- `namespace`: `patient-{patient_id}`
+- `id`:        `{document_id}-chunk-{index}`
+- `metadata`:  patient_id, document_id, chunk_index, chunk_text (first 500 chars)
+
+Tested on `Sahar_test_reports.pdf` (15 pages, 38,367 chars) → 137 chunks.
+Query "What is Sahar's Ferritin?" → top result score 0.60, returned exact row: **Ferritin 11.30 ng/mL (LOW, ref 13–150)**.
 
 ---
 

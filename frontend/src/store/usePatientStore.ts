@@ -16,7 +16,12 @@ export type PatientPayload = {
   sex?: 'male' | 'female' | 'other';
   height_cm?: number;
   weight_kg?: number;
+  notes?: string;
   conditions?: Array<{ name: string; notes?: string }>;
+  medications?: Array<{ name: string; dosage?: string; frequency?: string }>;
+  allergens?: Array<{ name: string; severity?: string }>;
+  family_history?: Array<{ condition: string; relationship?: string }>;
+  favourite_foods?: Array<{ name: string; preference_level?: number }>;
 };
 
 type PatientState = {
@@ -25,7 +30,7 @@ type PatientState = {
   loading: boolean;
   error: string | null;
   fetchPatients: () => Promise<void>;
-  createPatient: (payload: PatientPayload) => Promise<void>;
+  createPatient: (payload: PatientPayload) => Promise<unknown>;
 };
 
 export const usePatientStore = create<PatientState>((set, get) => ({
@@ -45,7 +50,8 @@ export const usePatientStore = create<PatientState>((set, get) => ({
     }
   },
   createPatient: async (payload) => {
-    await api.post('/patients', payload);
+    const response = await api.post('/patients', payload);
     await get().fetchPatients();
+    return response.data;
   },
 }));

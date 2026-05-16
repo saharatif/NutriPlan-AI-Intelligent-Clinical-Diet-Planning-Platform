@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.deps import _decode_jwt, get_current_doctor
+from api.deps import _decode_jwt, _fetch_jwks, get_current_doctor  # noqa: F401 — _fetch_jwks pre-warms cache on import
 from api.rate_limit import limiter
 from db.database import get_db
 from models.patient import AuditEvent, AuditLog, Doctor
@@ -52,6 +52,8 @@ async def login(
         if clinic:
             doctor.clinic = clinic
 
+    # Flush the doctor row first so the FK constraint on audit_logs is satisfied
+    await db.flush()
     db.add(AuditLog(doctor_id=doctor_id, action=AuditEvent.doctor_login))
     await db.commit()
     await db.refresh(doctor)

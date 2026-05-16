@@ -1,62 +1,45 @@
 import { ClipboardList, FileText, Plus, ShieldCheck, UserRound } from 'lucide-react';
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuthStore } from '../store/useAuthStore';
+import Layout from '../components/Layout';
 import { usePatientStore } from '../store/usePatientStore';
 
 export default function Dashboard() {
-  const doctor = useAuthStore((state) => state.doctor);
-  const logout = useAuthStore((state) => state.logout);
   const { patients, fetchPatients, loading, error } = usePatientStore();
 
-  useEffect(() => {
-    void fetchPatients();
-  }, [fetchPatients]);
+  useEffect(() => { void fetchPatients(); }, [fetchPatients]);
 
   return (
-    <main className="app-shell">
-      <header className="topbar">
-        <div className="brand-lockup">
-          <strong>NutriPlan AI</strong>
-          <span>{doctor?.clinic ?? doctor?.name}</span>
+    <Layout>
+      <div className="page-header">
+        <div>
+          <h1>Patients</h1>
+          <p style={{ color: 'var(--slate)', fontSize: 14, marginTop: 4 }}>
+            {loading ? 'Loading…' : `${patients.length} patient${patients.length !== 1 ? 's' : ''} on record`}
+          </p>
         </div>
-        <nav className="pill-nav" aria-label="Workspace">
-          <Link className="pill-tab active" to="/">Patients</Link>
-          <button className="pill-tab" disabled title="Available in Week 4">Plans</button>
-          <button className="pill-tab" disabled title="Available in Week 4">Documents</button>
-        </nav>
-        <button className="button-ghost" onClick={() => void logout()}>Sign out</button>
-      </header>
+        <Link className="button-primary" to="/patients/new"><Plus size={16} /> Add Patient</Link>
+      </div>
 
-      <section className="content">
-        <div className="dashboard-hero">
-          <div>
-            <span className="badge badge-success">Secure clinical dashboard</span>
-            <h1>Patients</h1>
-          </div>
-          <Link className="button-primary" to="/patients/new">
-            <Plus size={18} /> Add Patient
-          </Link>
-        </div>
-
+      <div className="content">
         <div className="feature-grid">
           <article className="icon-feature">
-            <UserRound size={22} />
+            <UserRound size={20} />
             <strong>{patients.length}</strong>
             <span>Active patients</span>
           </article>
           <article className="icon-feature">
-            <FileText size={22} />
+            <FileText size={20} />
             <strong>0</strong>
             <span>Uploaded reports</span>
           </article>
           <article className="icon-feature">
-            <ShieldCheck size={22} />
-            <strong>Secure</strong>
-            <span>Scoped records</span>
+            <ShieldCheck size={20} />
+            <strong>RLS</strong>
+            <span>Data isolated</span>
           </article>
           <article className="icon-feature">
-            <ClipboardList size={22} />
+            <ClipboardList size={20} />
             <strong>0</strong>
             <span>Draft plans</span>
           </article>
@@ -76,25 +59,29 @@ export default function Dashboard() {
             <thead>
               <tr>
                 <th>Code</th>
-                <th>Name</th>
-                <th>Created</th>
+                <th>Patient</th>
+                <th>Added</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
               {patients.map((patient) => (
                 <tr key={patient.id}>
-                  <td>{patient.patient_code}</td>
-                  <td>{patient.first_name} {patient.last_name}</td>
-                  <td>{new Date(patient.created_at).toLocaleDateString()}</td>
+                  <td><span className="profile-chip">{patient.patient_code}</span></td>
+                  <td style={{ fontWeight: 500 }}>{patient.first_name} {patient.last_name}</td>
+                  <td style={{ color: 'var(--slate)' }}>{new Date(patient.created_at).toLocaleDateString()}</td>
+                  <td><Link className="table-link" to={`/patients/${patient.id}`}>View →</Link></td>
                 </tr>
               ))}
               {!loading && !error && patients.length === 0 && (
-                <tr><td colSpan={3}>No patients yet.</td></tr>
+                <tr><td colSpan={4} style={{ color: 'var(--slate)', textAlign: 'center', padding: '32px' }}>
+                  No patients yet — <Link className="table-link" to="/patients/new">add your first patient</Link>
+                </td></tr>
               )}
             </tbody>
           </table>
         </div>
-      </section>
-    </main>
+      </div>
+    </Layout>
   );
 }

@@ -11,8 +11,13 @@ from slowapi.middleware import SlowAPIMiddleware
 
 from api.rate_limit import limiter
 from api.routes_auth import router as auth_router
+from api.routes_audit import router as audit_router
 from api.routes_documents import router as documents_router
 from api.routes_health import router as health_router
+from api.routes_diet_plans import router as diet_plans_router
+from api.routes_export import router as export_router
+from api.routes_meals import router as meals_router
+from api.routes_medical_profile import router as medical_profile_router
 from api.routes_patients import router as patients_router
 from utils.config import settings
 from utils.logging import configure_logging, logger
@@ -55,6 +60,11 @@ def create_app() -> FastAPI:
     app.include_router(auth_router)
     app.include_router(patients_router)
     app.include_router(documents_router)
+    app.include_router(medical_profile_router)
+    app.include_router(diet_plans_router)
+    app.include_router(meals_router)
+    app.include_router(export_router)
+    app.include_router(audit_router)
     return app
 
 
