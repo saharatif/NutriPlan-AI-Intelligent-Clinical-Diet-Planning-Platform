@@ -18,8 +18,15 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    sex_enum = postgresql.ENUM("male", "female", "other", name="sex")
-    sex_enum.create(op.get_bind(), checkfirst=True)
+    # CREATE TYPE has no IF NOT EXISTS in PostgreSQL — use a DO block instead
+    op.execute("""
+        DO $$ BEGIN
+            CREATE TYPE sex AS ENUM ('male', 'female', 'other');
+        EXCEPTION
+            WHEN duplicate_object THEN NULL;
+        END $$;
+    """)
+    sex_enum = postgresql.ENUM("male", "female", "other", name="sex", create_type=False)
 
     op.create_table(
         "doctors",
@@ -28,6 +35,7 @@ def upgrade() -> None:
         sa.Column("name", sa.String(160), nullable=False),
         sa.Column("clinic", sa.String(200)),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        if_not_exists=True,
     )
     op.create_table(
         "patients",
@@ -47,24 +55,26 @@ def upgrade() -> None:
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.Column("deleted_at", sa.DateTime(timezone=True)),
         sa.UniqueConstraint("doctor_id", "patient_code", name="uq_patient_code_per_doctor"),
+        if_not_exists=True,
     )
-    op.create_index("ix_patients_doctor_id", "patients", ["doctor_id"])
-    op.create_index("ix_patients_patient_code", "patients", ["patient_code"])
+    op.create_index("ix_patients_doctor_id", "patients", ["doctor_id"], if_not_exists=True)
+    op.create_index("ix_patients_patient_code", "patients", ["patient_code"], if_not_exists=True)
 
     for table, cols in {
-        "patient_conditions": [sa.Column("name", sa.String(160), nullable=False), sa.Column("diagnosed_at", sa.Date), sa.Column("notes", sa.Text)],
-        "patient_medications": [sa.Column("name", sa.String(160), nullable=False), sa.Column("dosage", sa.String(120)), sa.Column("frequency", sa.String(120)), sa.Column("notes", sa.Text)],
-        "patient_allergens": [sa.Column("name", sa.String(160), nullable=False), sa.Column("severity", sa.String(60)), sa.Column("source", sa.String(60), server_default="manual", nullable=False)],
-        "patient_family_history": [sa.Column("condition", sa.String(160), nullable=False), sa.Column("relationship", sa.String(100)), sa.Column("notes", sa.Text)],
-        "patient_favourite_foods": [sa.Column("name", sa.String(160), nullable=False), sa.Column("preference_level", sa.Integer, server_default="1", nullable=False)],
+        "patient_conditions":    [sa.Column("name", sa.String(160), nullable=False), sa.Column("diagnosed_at", sa.Date), sa.Column("notes", sa.Text)],
+        "patient_medications":   [sa.Column("name", sa.String(160), nullable=False), sa.Column("dosage", sa.String(120)), sa.Column("frequency", sa.String(120)), sa.Column("notes", sa.Text)],
+        "patient_allergens":     [sa.Column("name", sa.String(160), nullable=False), sa.Column("severity", sa.String(60)), sa.Column("source", sa.String(60), server_default="manual", nullable=False)],
+        "patient_family_history":[sa.Column("condition", sa.String(160), nullable=False), sa.Column("relationship", sa.String(100)), sa.Column("notes", sa.Text)],
+        "patient_favourite_foods":[sa.Column("name", sa.String(160), nullable=False), sa.Column("preference_level", sa.Integer, server_default="1", nullable=False)],
     }.items():
         op.create_table(
             table,
             sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
             sa.Column("patient_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("patients.id", ondelete="CASCADE"), nullable=False),
             *cols,
+            if_not_exists=True,
         )
-        op.create_index(f"ix_{table}_patient_id", table, ["patient_id"])
+        op.create_index(f"ix_{table}_patient_id", table, ["patient_id"], if_not_exists=True)
 
     op.create_table(
         "patient_documents",
@@ -75,8 +85,9 @@ def upgrade() -> None:
         sa.Column("content_type", sa.String(120), server_default="application/pdf", nullable=False),
         sa.Column("size_bytes", sa.Integer, server_default="0", nullable=False),
         sa.Column("uploaded_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        if_not_exists=True,
     )
-    op.create_index("ix_patient_documents_patient_id", "patient_documents", ["patient_id"])
+    op.create_index("ix_patient_documents_patient_id", "patient_documents", ["patient_id"], if_not_exists=True)
 
     op.create_table(
         "diet_plans",
@@ -85,9 +96,10 @@ def upgrade() -> None:
         sa.Column("patient_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("patients.id"), nullable=False),
         sa.Column("status", sa.String(40), server_default="draft", nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        if_not_exists=True,
     )
-    op.create_index("ix_diet_plans_doctor_id", "diet_plans", ["doctor_id"])
-    op.create_index("ix_diet_plans_patient_id", "diet_plans", ["patient_id"])
+    op.create_index("ix_diet_plans_doctor_id", "diet_plans", ["doctor_id"], if_not_exists=True)
+    op.create_index("ix_diet_plans_patient_id", "diet_plans", ["patient_id"], if_not_exists=True)
 
     op.create_table(
         "audit_logs",
@@ -96,8 +108,9 @@ def upgrade() -> None:
         sa.Column("patient_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("patients.id")),
         sa.Column("action", sa.String(120), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        if_not_exists=True,
     )
-    op.create_index("ix_audit_logs_doctor_id", "audit_logs", ["doctor_id"])
+    op.create_index("ix_audit_logs_doctor_id", "audit_logs", ["doctor_id"], if_not_exists=True)
 
 
 def downgrade() -> None:

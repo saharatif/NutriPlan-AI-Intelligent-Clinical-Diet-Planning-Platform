@@ -35,8 +35,8 @@
 ### Database
 - [x] `alembic.ini` + `alembic/env.py` configured
 - [x] `alembic/versions/001_initial_schema.py` — all tables
-- [ ] `alembic upgrade head` runs cleanly from scratch
-- [ ] RLS policies applied in Supabase SQL Editor (all 9 tables)
+- [x] `alembic upgrade head` runs cleanly from scratch
+- [x] RLS policies applied in Supabase SQL Editor (all 9 tables)
 
 ### Frontend
 - [ ] `frontend/package.json` + dependencies installed (package file created; local Node binary is broken)
@@ -71,7 +71,7 @@
 - [x] `pytest tests/test_api.py` passes
 - [ ] Login page and dashboard render in browser without console errors
 
-**Status:** In Progress
+**Status:** Complete
 
 **Session notes (2026-05-15):**
 - Added Week 1 backend, Alembic migration, frontend skeleton, Docker Compose, Nginx, and `.env.example`.

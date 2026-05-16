@@ -44,6 +44,11 @@ class Settings(BaseSettings):
     RATE_LIMIT_PER_MINUTE: int = 60
     CORS_ORIGINS: str = "http://localhost,http://localhost:5173"
 
+    @field_validator("SUPABASE_URL")
+    @classmethod
+    def strip_supabase_url_slash(cls, value: str) -> str:
+        return value.rstrip("/")
+
     @field_validator("DATABASE_URL")
     @classmethod
     def normalize_database_url(cls, value: str) -> str:
