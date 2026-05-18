@@ -56,8 +56,6 @@ export default function MealDetailPanel({
 
   return (
     <aside className="detail-panel">
-      <button className="button-ghost" onClick={onClose}>Close</button>
-
       <div>
         <h2>{meal.meal_name}</h2>
         {meal.clinical_note && <p style={{ color: 'var(--slate)', fontSize: 13, marginTop: 4 }}>{meal.clinical_note}</p>}
@@ -93,6 +91,7 @@ export default function MealDetailPanel({
       )}
 
       <button className="button-buy" onClick={onRegenerate}>Regenerate This Meal</button>
+      <button className="button-ghost" onClick={onClose}>Close</button>
     </aside>
   );
 }

@@ -354,8 +354,21 @@ tbody tr:last-child td { border-bottom: 0; }
   display: inline-flex;
   font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
   padding: 3px 8px;
+  text-transform: uppercase;
+}
+.plan-sticky-header {
+  align-items: center;
+  background: var(--canvas);
+  border-bottom: 1px solid var(--hairline-soft);
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  padding: 14px 32px;
+  position: sticky;
+  top: 0;
+  z-index: 20;
 }
 .badge-success { background: var(--success-bg);  color: var(--success); }
 .badge-warning { background: var(--warning-bg);  color: var(--warning); }
@@ -679,10 +692,10 @@ tbody tr:last-child td { border-bottom: 0; }
   display: flex;
   border-left: 3px solid transparent;
 }
-.slot-breakfast { border-left-color: #f59e0b; }
-.slot-lunch     { border-left-color: #0d9488; }
-.slot-snack     { border-left-color: #8b5cf6; }
-.slot-dinner    { border-left-color: #3b82f6; }
+.slot-breakfast { border-left-color: #f59e0b; background: #fffbeb; color: #92400e; }
+.slot-lunch     { border-left-color: #0d9488; background: #ccfbf1; color: #065f46; }
+.slot-snack     { border-left-color: #8b5cf6; background: #ede9fe; color: #5b21b6; }
+.slot-dinner    { border-left-color: #3b82f6; background: #dbeafe; color: #1e40af; }
 
 .calendar-cell { background: transparent; min-width: 0; overflow: visible; position: relative; }
 
@@ -734,10 +747,18 @@ tbody tr:last-child td { border-bottom: 0; }
   width: 100%;
   transition: border-color 120ms, box-shadow 120ms;
 }
-.meal-card.breakfast { border-left-color: #f59e0b; }
-.meal-card.lunch     { border-left-color: #0d9488; }
-.meal-card.snack     { border-left-color: #8b5cf6; }
-.meal-card.dinner    { border-left-color: #3b82f6; }
+.meal-card.breakfast { border-left-color: #f59e0b; background: #fffbeb; }
+.meal-card.lunch     { border-left-color: #0d9488; background: #ccfbf1; }
+.meal-card.snack     { border-left-color: #8b5cf6; background: #ede9fe; }
+.meal-card.dinner    { border-left-color: #3b82f6; background: #dbeafe; }
+.meal-card.breakfast strong,
+.meal-card.lunch strong,
+.meal-card.snack strong,
+.meal-card.dinner strong { color: var(--ink-deep); }
+.meal-card.breakfast span,
+.meal-card.lunch span,
+.meal-card.snack span,
+.meal-card.dinner span { color: var(--charcoal); }
 .meal-card strong {
   display: block;
   overflow: hidden;

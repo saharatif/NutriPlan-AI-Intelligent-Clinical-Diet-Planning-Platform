@@ -1,12 +1,17 @@
 import { Printer } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
+import DailyNutritionChart from '../components/DailyNutritionChart';
 import MealDetailPanel from '../components/MealDetailPanel';
 import WeekCalendar from '../components/WeekCalendar';
 import { api } from '../lib/api';
 import type { DietMeal } from './DietPlanReview';
 
 type DietPlanResponse = { id: string; status: string; meals: DietMeal[] };
+
+function weekCalories(meals: DietMeal[], w: number) {
+  return meals.filter((m) => m.week === w).reduce((s, m) => s + m.base_calories, 0);
+}
 
 export default function DietPlan() {
   const { planId } = useParams();
@@ -29,7 +34,6 @@ export default function DietPlan() {
 
   useEffect(() => { void load(); }, [planId]);
 
-  // Auto-print when opened from the Plans page with ?print=1
   useEffect(() => {
     if (plan && searchParams.get('print') === '1') {
       setTimeout(() => window.print(), 500);
@@ -42,28 +46,51 @@ export default function DietPlan() {
 
   return (
     <main className="app-shell">
+      {/* Sticky page header */}
+      <header className="plan-sticky-header">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span className="badge badge-success">Approved</span>
+          <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>Diet Plan</h1>
+        </div>
+        <button className="button-ghost" style={{ gap: 6, minHeight: 36 }} onClick={() => window.print()}>
+          <Printer size={14} /> Print / Save as PDF
+        </button>
+      </header>
+
       <section className="content">
-        <div className="dashboard-hero">
-          <div><span className="badge badge-success">Approved</span><h1>Diet Plan</h1></div>
-          <button className="btn-icon-sm" style={{ fontSize: 13, padding: '8px 16px' }} onClick={() => window.print()}>
-            <Printer size={15} /> Print / Save as PDF
-          </button>
-        </div>
-
+        {/* Week tabs with calorie badges */}
         <div className="week-tabs">
-          {Array.from({ length: numWeeks }, (_, i) => i + 1).map((w) => (
-            <button key={w} className={week === w ? 'pill-tab active' : 'pill-tab'} onClick={() => setWeek(w)}>
-              Week {w}
-            </button>
-          ))}
+          {Array.from({ length: numWeeks }, (_, i) => i + 1).map((w) => {
+            const kcal = plan ? weekCalories(plan.meals, w) : null;
+            return (
+              <button
+                key={w}
+                className={week === w ? 'pill-tab active' : 'pill-tab'}
+                onClick={() => setWeek(w)}
+              >
+                Week {w}
+                {kcal !== null && (
+                  <span className="week-tab-badge">
+                    {(kcal / 1000).toFixed(1)}k kcal
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
+        {/* Calendar */}
         {plan && (
           <WeekCalendar
             meals={plan.meals}
             week={week}
             onMealClick={(meal) => { setSelected(meal); setMultiplier(meal.serving_multiplier || 1); }}
           />
+        )}
+
+        {/* Daily Nutrition Chart */}
+        {plan && plan.meals.length > 0 && (
+          <DailyNutritionChart meals={plan.meals} week={week} />
         )}
 
         <MealDetailPanel
