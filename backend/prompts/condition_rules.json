@@ -1,20 +1,68 @@
 {
   "hypertension": {
-    "avoid": [],
-    "limit": ["sodium", "processed foods"],
-    "prefer": ["potassium-rich vegetables", "whole grains"],
-    "note": "low sodium"
-  },
-  "type 2 diabetes": {
-    "avoid": ["sugary drinks"],
-    "limit": ["refined carbohydrates"],
-    "prefer": ["high-fiber meals", "lean protein"],
-    "note": "steady carbohydrate distribution"
+    "avoid": ["high-sodium foods", "pickles", "processed meats", "canned soups"],
+    "limit": ["sodium", "processed foods", "alcohol"],
+    "prefer": ["potassium-rich vegetables", "whole grains", "bananas", "leafy greens"],
+    "note": "low sodium diet — keep meals under 600 mg sodium each"
   },
   "hypothyroid": {
-    "avoid": ["soy"],
+    "avoid": ["soy", "raw cruciferous vegetables in excess", "millet"],
+    "limit": ["raw kale", "raw broccoli", "raw cabbage", "raw cauliflower"],
+    "prefer": ["selenium-rich foods", "iodine-rich foods", "Brazil nuts", "fish", "eggs"],
+    "note": "avoid goitrogens and soy which interfere with thyroid hormone absorption"
+  },
+  "hypothyroidism": {
+    "avoid": ["soy", "raw cruciferous vegetables in excess", "millet"],
+    "limit": ["raw kale", "raw broccoli", "raw cabbage", "raw cauliflower"],
+    "prefer": ["selenium-rich foods", "iodine-rich foods", "Brazil nuts", "fish", "eggs"],
+    "note": "avoid goitrogens and soy which interfere with thyroid hormone absorption"
+  },
+  "type 2 diabetes": {
+    "avoid": ["sugary drinks", "white bread", "white rice", "pastries", "sweets"],
+    "limit": ["refined carbohydrates", "high-GI foods", "fruit juice"],
+    "prefer": ["high-fiber meals", "lean protein", "low-GI grains", "legumes", "non-starchy vegetables"],
+    "note": "steady carbohydrate distribution — balance carbs across all meals"
+  },
+  "pre-diabetic": {
+    "avoid": ["sugary drinks", "white bread", "white rice", "pastries", "sweets"],
+    "limit": ["refined carbohydrates", "high-GI foods", "fruit juice"],
+    "prefer": ["high-fiber meals", "lean protein", "low-GI grains", "legumes", "non-starchy vegetables"],
+    "note": "blood sugar management — emphasise low-GI whole foods and controlled carbohydrate portions"
+  },
+  "prediabetes": {
+    "avoid": ["sugary drinks", "white bread", "white rice", "pastries"],
+    "limit": ["refined carbohydrates", "high-GI foods"],
+    "prefer": ["high-fiber meals", "lean protein", "low-GI grains", "legumes"],
+    "note": "blood sugar management — low-GI diet with balanced macros"
+  },
+  "high cholesterol": {
+    "avoid": ["trans fats", "fried foods", "full-fat dairy"],
+    "limit": ["saturated fats", "red meat", "egg yolks"],
+    "prefer": ["oats", "fatty fish", "nuts", "olive oil", "legumes"],
+    "note": "heart-healthy diet — reduce LDL-raising foods"
+  },
+  "kidney disease": {
+    "avoid": ["high-potassium foods", "high-phosphorus foods"],
+    "limit": ["protein", "sodium", "potassium", "phosphorus"],
+    "prefer": ["controlled protein portions", "low-phosphorus foods"],
+    "note": "renal diet — limit protein and electrolytes"
+  },
+  "celiac": {
+    "avoid": ["gluten", "wheat", "barley", "rye", "spelt"],
     "limit": [],
-    "prefer": ["selenium-rich foods"],
-    "note": "soy avoided for thyroid medication timing"
+    "prefer": ["rice", "quinoa", "corn", "gluten-free oats"],
+    "note": "strictly gluten-free diet"
+  },
+  "irritable bowel syndrome": {
+    "avoid": ["high-FODMAP foods", "onions", "garlic", "beans in excess"],
+    "limit": ["lactose", "fructose", "caffeine", "alcohol"],
+    "prefer": ["low-FODMAP foods", "rice", "oats", "carrots", "zucchini"],
+    "note": "low-FODMAP approach — avoid fermentable carbohydrates"
+  },
+  "gout": {
+    "avoid": ["organ meats", "shellfish", "beer", "high-fructose corn syrup"],
+    "limit": ["red meat", "alcohol", "sugary drinks"],
+    "prefer": ["low-fat dairy", "vegetables", "cherries", "coffee"],
+    "note": "low-purine diet — avoid purine-rich foods that raise uric acid"
   }
 }

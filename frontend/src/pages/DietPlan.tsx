@@ -1,5 +1,6 @@
+import { Printer } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import MealDetailPanel from '../components/MealDetailPanel';
 import WeekCalendar from '../components/WeekCalendar';
 import { api } from '../lib/api';
@@ -9,6 +10,7 @@ type DietPlanResponse = { id: string; status: string; meals: DietMeal[] };
 
 export default function DietPlan() {
   const { planId } = useParams();
+  const [searchParams] = useSearchParams();
   const [plan, setPlan] = useState<DietPlanResponse | null>(null);
   const [week, setWeek] = useState(1);
   const [selected, setSelected] = useState<DietMeal | null>(null);
@@ -25,21 +27,52 @@ export default function DietPlan() {
     if (planId && selected) await api.patch(`/diet-plans/${planId}/meals/${selected.id}`, { serving_multiplier: value });
   }
 
-  async function exportPdf() {
-    if (!planId) return;
-    const response = await api.post<{ url: string }>(`/diet-plans/${planId}/export/pdf`);
-    window.location.href = response.data.url;
-  }
-
   useEffect(() => { void load(); }, [planId]);
+
+  // Auto-print when opened from the Plans page with ?print=1
+  useEffect(() => {
+    if (plan && searchParams.get('print') === '1') {
+      setTimeout(() => window.print(), 500);
+    }
+  }, [plan, searchParams]);
+
+  const numWeeks = plan && plan.meals.length > 0
+    ? Math.max(...plan.meals.map((m) => m.week))
+    : 0;
 
   return (
     <main className="app-shell">
       <section className="content">
-        <div className="dashboard-hero"><div><span className="badge badge-success">Approved</span><h1>Diet Plan</h1></div><button className="button-buy" onClick={() => void exportPdf()}>Export PDF</button></div>
-        <div className="week-tabs">{[1, 2, 3, 4].map((item) => <button className={week === item ? 'pill-tab active' : 'pill-tab'} onClick={() => setWeek(item)} key={item}>Week {item}</button>)}</div>
-        {plan && <WeekCalendar meals={plan.meals} week={week} onMealClick={(meal) => { setSelected(meal); setMultiplier(meal.serving_multiplier || 1); }} />}
-        <MealDetailPanel meal={selected} multiplier={multiplier} onMultiplier={(value) => void persistMultiplier(value)} onRegenerate={() => undefined} onClose={() => setSelected(null)} />
+        <div className="dashboard-hero">
+          <div><span className="badge badge-success">Approved</span><h1>Diet Plan</h1></div>
+          <button className="btn-icon-sm" style={{ fontSize: 13, padding: '8px 16px' }} onClick={() => window.print()}>
+            <Printer size={15} /> Print / Save as PDF
+          </button>
+        </div>
+
+        <div className="week-tabs">
+          {Array.from({ length: numWeeks }, (_, i) => i + 1).map((w) => (
+            <button key={w} className={week === w ? 'pill-tab active' : 'pill-tab'} onClick={() => setWeek(w)}>
+              Week {w}
+            </button>
+          ))}
+        </div>
+
+        {plan && (
+          <WeekCalendar
+            meals={plan.meals}
+            week={week}
+            onMealClick={(meal) => { setSelected(meal); setMultiplier(meal.serving_multiplier || 1); }}
+          />
+        )}
+
+        <MealDetailPanel
+          meal={selected}
+          multiplier={multiplier}
+          onMultiplier={(value) => void persistMultiplier(value)}
+          onRegenerate={() => undefined}
+          onClose={() => setSelected(null)}
+        />
       </section>
     </main>
   );

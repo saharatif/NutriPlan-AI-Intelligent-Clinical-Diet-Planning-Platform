@@ -189,24 +189,25 @@ class VectorClient:
 
         # pgvector: one row per chunk, keyed by document+chunk
         for c in chunks:
-            chunk_id = f"{document_id}-chunk-{c['index']}"
-            vec  = _vec_literal(c["vector"])
-            meta = json.dumps({
+            chunk_id = uuid.uuid5(uuid.UUID(str(document_id)), f"chunk-{c['index']}")
+            meta = {
                 "patient_id":  str(patient_id),
                 "document_id": str(document_id),
                 "chunk_index": c["index"],
                 "chunk_text":  c["text"][:500],
                 "type":        "document_chunk",
-            })
-            vec_json = json.dumps(c["vector"])
+            }
+            vec_literal = _vec_literal(c["vector"])
+            vec_json    = json.dumps(c["vector"])
+            meta_json   = json.dumps(meta).replace("'", "''")  # escape single quotes
             await self.db.execute(text(f"""
                 INSERT INTO patient_vectors (id, patient_id, vector, embedding, metadata_json)
                 VALUES (
                     '{chunk_id}'::uuid,
                     '{patient_id}'::uuid,
                     '{vec_json}'::jsonb,
-                    '{vec}'::vector,
-                    '{meta}'::jsonb
+                    '{vec_literal}'::vector,
+                    '{meta_json}'::jsonb
                 )
                 ON CONFLICT DO NOTHING
             """))

@@ -9,25 +9,25 @@ export default function NewPatient() {
   const createPatient = usePatientStore((state) => state.createPatient);
 
   async function handleSubmit(payload: PatientPayload, files: File[]) {
-    // 1. Create patient record with all clinical data
+    // 1. Create patient record
     const patient = await createPatient(payload) as { id: string };
     const patientId = patient.id;
 
-    // 2. Upload and trigger OCR for each PDF in parallel
+    // 2. Upload PDFs and trigger OCR — errors here don't block navigation
     if (files.length > 0) {
-      await Promise.all(files.map(async (file) => {
-        const form = new FormData();
-        form.append('file', file);
-
-        const docResponse = await api.post<{ id: string }>(
-          `/patients/${patientId}/documents`,
-          form,
-          { headers: { 'Content-Type': 'multipart/form-data' } }
-        );
-
-        // Trigger Mistral OCR + chunk embedding for this document
-        await api.post(`/patients/${patientId}/documents/${docResponse.data.id}/process`);
-      }));
+      Promise.all(files.map(async (file) => {
+        try {
+          const form = new FormData();
+          form.append('file', file);
+          const docResponse = await api.post<{ id: string }>(
+            `/patients/${patientId}/documents`,
+            form
+          );
+          await api.post(`/patients/${patientId}/documents/${docResponse.data.id}/process`);
+        } catch {
+          // OCR runs in background — upload failure is non-fatal
+        }
+      })).catch(() => undefined);
     }
 
     navigate(`/patients/${patientId}`);

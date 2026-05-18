@@ -19,6 +19,7 @@ class MealBase(BaseModel):
     ingredients: list[Ingredient]
     recipe_url: str | None = None
     clinical_note: str | None = None
+    recipe_steps: list[str] | None = None
     serving_multiplier: float = 1.0
 
 
@@ -57,6 +58,7 @@ class DietPlanListItem(BaseModel):
     patient_id: uuid.UUID
     status: str
     plan_type: str
+    approved_at: datetime | None = None
     created_at: datetime
 
 

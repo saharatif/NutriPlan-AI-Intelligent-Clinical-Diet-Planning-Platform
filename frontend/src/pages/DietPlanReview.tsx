@@ -7,6 +7,7 @@ import { api } from '../lib/api';
 
 export type DietMeal = {
   id: string;
+  diet_plan_id: string;
   week: number;
   day: number;
   meal_slot: string;
@@ -18,6 +19,7 @@ export type DietMeal = {
   ingredients: Array<{ name: string; quantity: number; unit: string }>;
   recipe_url?: string | null;
   clinical_note?: string | null;
+  recipe_steps?: string[] | null;
   serving_multiplier: number;
 };
 

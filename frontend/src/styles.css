@@ -225,6 +225,19 @@ label {
   padding: 12px 8px;
 }
 
+/* Nav badge (e.g. "Soon") */
+.nav-badge {
+  background: rgba(148, 163, 184, 0.15);
+  border-radius: 4px;
+  color: var(--steel);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin-left: auto;
+  padding: 2px 5px;
+  text-transform: uppercase;
+}
+
 .layout-main { min-width: 0; }
 
 /* ── Topbar (used in non-Layout pages) ─────────────────────────────────────── */
@@ -999,4 +1012,148 @@ tbody tr:last-child td { border-bottom: 0; }
   .data-panel { overflow-x: auto; }
   .profile-grid, .constraint-grid { grid-template-columns: 1fr; }
   .auth-showcase { border-radius: 10px; }
+}
+
+/* ── Small icon button (PDF download etc.) ─────────────────────────────────── */
+.btn-icon-sm {
+  align-items: center;
+  background: var(--surface-soft);
+  border: 1px solid var(--hairline-soft);
+  border-radius: 6px;
+  color: var(--ink);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 500;
+  gap: 5px;
+  min-height: unset;
+  padding: 5px 10px;
+  transition: background 120ms, border-color 120ms;
+  white-space: nowrap;
+}
+.btn-icon-sm:hover { background: var(--surface-mid); border-color: var(--hairline); }
+.btn-icon-sm:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ── Spin animation ────────────────────────────────────────────────────────── */
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { animation: spin 0.8s linear infinite; display: inline-block; }
+
+/* ── Coming soon panel ─────────────────────────────────────────────────────── */
+.coming-soon-panel {
+  align-items: center;
+  background: var(--canvas);
+  border: 1px solid var(--hairline-soft);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+  padding: 56px 32px;
+  text-align: center;
+}
+.coming-soon-panel h2 { color: var(--charcoal); font-size: 18px; }
+.coming-soon-panel p { color: var(--slate); font-size: 14px; max-width: 480px; line-height: 1.6; }
+.coming-soon-list {
+  color: var(--slate);
+  font-size: 13px;
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+  text-align: left;
+}
+.coming-soon-list li::before { content: '→ '; color: var(--primary); font-weight: 600; }
+
+/* ── Ingredients list (detail panel) ──────────────────────────────────────── */
+.ingredients-list {
+  display: grid;
+  gap: 5px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.ingredients-list li { align-items: baseline; display: flex; font-size: 13px; gap: 8px; }
+.ingredient-qty { color: var(--slate); font-size: 12px; min-width: 80px; }
+
+/* ── Recipe steps ──────────────────────────────────────────────────────────── */
+.recipe-steps { border-top: 1px solid var(--hairline-soft); padding-top: 14px; }
+.steps-loading { color: var(--slate); font-size: 13px; font-style: italic; }
+.steps-list {
+  counter-reset: step;
+  display: grid;
+  gap: 10px;
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+.steps-list li {
+  color: var(--ink);
+  counter-increment: step;
+  display: grid;
+  font-size: 13px;
+  gap: 8px;
+  grid-template-columns: 22px 1fr;
+  line-height: 1.5;
+}
+.steps-list li::before {
+  align-items: center;
+  background: var(--primary-soft);
+  border-radius: 50%;
+  color: var(--primary-deep);
+  content: counter(step);
+  display: flex;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
+  height: 22px;
+  justify-content: center;
+  margin-top: 1px;
+  width: 22px;
+}
+
+/* ── Print styles ──────────────────────────────────────────────────────────── */
+@media print {
+  .sidebar,
+  .draft-banner,
+  .week-tabs,
+  .dashboard-hero button,
+  .btn-icon-sm,
+  .button-buy,
+  .button-primary,
+  .meal-hover-card,
+  .daily-chart-wrap {
+    display: none !important;
+  }
+
+  .layout-shell {
+    grid-template-columns: 1fr !important;
+  }
+
+  .layout-main, .content, .app-shell {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .calendar-grid {
+    grid-template-columns: 80px repeat(7, 1fr) !important;
+    font-size: 9px;
+    gap: 3px;
+  }
+
+  .meal-card {
+    border: 1px solid #ccc !important;
+    border-left-width: 3px !important;
+    box-shadow: none !important;
+    padding: 4px 6px !important;
+  }
+
+  .meal-card strong { font-size: 9px; white-space: normal; }
+  .macro-badge { font-size: 8px; padding: 0 3px; }
+  .calendar-totals-cell, .calendar-totals-label { font-size: 9px; min-height: unset; padding: 4px 6px; }
+
+  @page {
+    margin: 12mm;
+    size: A4 landscape;
+  }
 }

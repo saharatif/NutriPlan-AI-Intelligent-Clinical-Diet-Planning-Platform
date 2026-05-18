@@ -44,6 +44,7 @@ class DietPlanMeal(Base):
     ingredients: Mapped[list] = mapped_column(JSON, default=list)
     recipe_url: Mapped[str | None] = mapped_column(String(500))
     clinical_note: Mapped[str | None] = mapped_column(Text)
+    recipe_steps: Mapped[list | None] = mapped_column(JSON, nullable=True)
     serving_multiplier: Mapped[float] = mapped_column(Float, default=1.0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

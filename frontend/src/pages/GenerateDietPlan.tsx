@@ -38,7 +38,8 @@ export default function GenerateDietPlan() {
   const { patientId } = useParams();
   const navigate = useNavigate();
   const [weeks, setWeeks] = useState<2 | 4>(4);
-  const [selectedFavourites, setSelectedFavourites] = useState<string[]>(['dal', 'oatmeal', 'salmon']);
+  const [favouriteOptions, setFavouriteOptions] = useState<string[]>([]);
+  const [selectedFavourites, setSelectedFavourites] = useState<string[]>([]);
   const [allergens, setAllergens] = useState<string[]>([]);
   const [status, setStatus] = useState<'idle' | 'generating' | 'complete' | 'error'>('idle');
   const [statusLabel, setStatusLabel] = useState('Ready to generate');
@@ -47,8 +48,21 @@ export default function GenerateDietPlan() {
 
   useEffect(() => {
     if (!patientId) return;
-    void api.get<{ allergens: Array<{ name: string }> }>(`/patients/${patientId}`)
-      .then((r) => setAllergens(r.data.allergens.map((a) => a.name.toLowerCase())));
+    void api.get<{
+      allergens: Array<{ name: string }>;
+      favourite_foods: Array<{ name: string }>;
+    }>(`/patients/${patientId}`).then((r) => {
+      const allergensLower = r.data.allergens.map((a) => a.name.toLowerCase());
+      setAllergens(allergensLower);
+
+      const foods = r.data.favourite_foods.map((f) => f.name.toLowerCase());
+      setFavouriteOptions(foods);
+      // Pre-select all favourites that aren't blocked by allergens
+      const safe = foods.filter(
+        (food) => !allergensLower.some((a) => food.includes(a) || a.includes(food.split(' ')[0]))
+      );
+      setSelectedFavourites(safe);
+    });
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, [patientId]);
 
@@ -98,7 +112,6 @@ export default function GenerateDietPlan() {
     }, POLL_INTERVAL_MS);
   }
 
-  const favouriteOptions = ['dal', 'oatmeal', 'salmon', 'milk smoothie', 'peanut chutney', 'soy bowl'];
   const isGenerating = status === 'generating';
 
   return (
@@ -133,9 +146,14 @@ export default function GenerateDietPlan() {
           {/* Favourite foods */}
           <div className="form-section">
             <div className="section-kicker">Favourite foods</div>
+            {favouriteOptions.length === 0 && (
+              <p style={{ fontSize: 12, color: 'var(--slate)' }}>
+                No favourite foods on this patient's profile — add them on the patient profile page to pre-populate this list.
+              </p>
+            )}
             <div className="chip-row">
               {favouriteOptions.map((food) => {
-                const blocked = allergens.some((a) => food.includes(a));
+                const blocked = allergens.some((a) => food.includes(a) || a.includes(food.split(' ')[0]));
                 const selected = selectedFavourites.includes(food);
                 return (
                   <button

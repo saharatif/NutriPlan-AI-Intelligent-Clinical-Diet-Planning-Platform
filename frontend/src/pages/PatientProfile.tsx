@@ -92,9 +92,7 @@ export default function PatientProfile() {
         if (file.type !== 'application/pdf') continue;
         const form = new FormData();
         form.append('file', file);
-        await api.post(`/patients/${patientId}/documents`, form, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
+        await api.post(`/patients/${patientId}/documents`, form);
       }
       void load();
     } finally {

@@ -4,10 +4,13 @@ import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import DietPlan from './pages/DietPlan';
 import DietPlanReview from './pages/DietPlanReview';
+import DocumentsPage from './pages/DocumentsPage';
 import GenerateDietPlan from './pages/GenerateDietPlan';
 import Login from './pages/Login';
 import NewPatient from './pages/NewPatient';
 import PatientProfile from './pages/PatientProfile';
+import PlansPage from './pages/PlansPage';
+import RecipesPage from './pages/RecipesPage';
 import { useAuthStore } from './store/useAuthStore';
 
 function ProtectedRoute({ children }: { children: JSX.Element }) {
@@ -28,10 +31,14 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
-      <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/" element={<Navigate to="/patients" replace />} />
+      <Route path="/patients" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/patients/new" element={<ProtectedRoute><NewPatient /></ProtectedRoute>} />
       <Route path="/patients/:patientId" element={<ProtectedRoute><PatientProfile /></ProtectedRoute>} />
       <Route path="/patients/:patientId/generate" element={<ProtectedRoute><GenerateDietPlan /></ProtectedRoute>} />
+      <Route path="/plans" element={<ProtectedRoute><PlansPage /></ProtectedRoute>} />
+      <Route path="/documents" element={<ProtectedRoute><DocumentsPage /></ProtectedRoute>} />
+      <Route path="/recipes" element={<ProtectedRoute><RecipesPage /></ProtectedRoute>} />
       <Route path="/diet-plans/:planId/review" element={<ProtectedRoute><DietPlanReview /></ProtectedRoute>} />
       <Route path="/diet-plans/:planId" element={<ProtectedRoute><DietPlan /></ProtectedRoute>} />
     </Routes>

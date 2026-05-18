@@ -1,15 +1,16 @@
-import { Activity, ClipboardList, FileText, LayoutDashboard, LogOut, Users } from 'lucide-react';
+import { Activity, ChefHat, ClipboardList, FileText, LogOut, Users } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
 
-function NavItem({ to, icon: Icon, label }: { to: string; icon: typeof Users; label: string }) {
+function NavItem({ to, icon: Icon, label, badge }: { to: string; icon: typeof Users; label: string; badge?: string }) {
   const { pathname } = useLocation();
-  const active = pathname === to || (to !== '/' && pathname.startsWith(to));
+  const active = pathname === to || pathname.startsWith(to + '/') || (to === '/patients' && pathname === '/patients');
   return (
     <Link to={to} className={active ? 'active' : ''}>
       <Icon size={16} />
       {label}
+      {badge && <span className="nav-badge">{badge}</span>}
     </Link>
   );
 }
@@ -27,11 +28,11 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
 
         <div className="sidebar-section">Workspace</div>
-        <NavItem to="/"              icon={LayoutDashboard} label="Dashboard" />
-        <NavItem to="/patients"      icon={Users}           label="Patients" />
-        <NavItem to="/plans"         icon={ClipboardList}   label="Diet Plans" />
-        <NavItem to="/documents"     icon={FileText}        label="Documents" />
-        <NavItem to="/audit"         icon={Activity}        label="Audit Log" />
+        <NavItem to="/patients"  icon={Users}         label="Patients" />
+        <NavItem to="/plans"     icon={ClipboardList} label="Diet Plans" />
+        <NavItem to="/recipes"   icon={ChefHat}       label="Custom Recipes" badge="Soon" />
+        <NavItem to="/documents" icon={FileText}       label="Documents" badge="Soon" />
+        <NavItem to="/audit"     icon={Activity}       label="Audit Log" />
 
         <div className="sidebar-footer">
           <div style={{ padding: '0 4px 10px', fontSize: 13, color: 'rgba(148,163,184,0.7)' }}>

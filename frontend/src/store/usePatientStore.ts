@@ -9,6 +9,8 @@ export type PatientListItem = {
   created_at: string;
 };
 
+export type DietaryPreference = 'vegan' | 'vegetarian' | 'pescatarian' | 'flexitarian';
+
 export type PatientPayload = {
   first_name: string;
   last_name: string;
@@ -17,6 +19,8 @@ export type PatientPayload = {
   height_cm?: number;
   weight_kg?: number;
   notes?: string;
+  ethnicity?: string;
+  dietary_preference?: DietaryPreference;
   conditions?: Array<{ name: string; notes?: string }>;
   medications?: Array<{ name: string; dosage?: string; frequency?: string }>;
   allergens?: Array<{ name: string; severity?: string }>;

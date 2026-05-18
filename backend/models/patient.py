@@ -61,6 +61,8 @@ class Patient(Base):
     phone: Mapped[str | None] = mapped_column(String(40))
     email: Mapped[str | None] = mapped_column(String(320))
     notes: Mapped[str | None] = mapped_column(Text)
+    ethnicity: Mapped[str | None] = mapped_column(String(120))
+    dietary_preference: Mapped[str | None] = mapped_column(String(40))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

@@ -85,6 +85,9 @@ class DocumentRead(BaseModel):
     uploaded_at: datetime
 
 
+DIETARY_PREFERENCES = {"vegan", "vegetarian", "pescatarian", "flexitarian"}
+
+
 class PatientBase(BaseModel):
     first_name: str = Field(min_length=1, max_length=100)
     last_name: str = Field(min_length=1, max_length=100)
@@ -95,6 +98,8 @@ class PatientBase(BaseModel):
     phone: str | None = None
     email: EmailStr | None = None
     notes: str | None = None
+    ethnicity: str | None = Field(default=None, max_length=120)
+    dietary_preference: str | None = Field(default=None, max_length=40)
 
 
 class PatientCreate(PatientBase):

@@ -69,6 +69,8 @@ class DietPlanService:
         conditions = list(profile.conditions or [])
         medications = list(profile.medications or [])
         restrictions = self._medical_restrictions(conditions, medications)
+        ethnicity = patient.ethnicity or None
+        dietary_preference = patient.dietary_preference or None
 
         plan = DietPlan(
             doctor_id=patient.doctor_id,
@@ -80,6 +82,8 @@ class DietPlanService:
                 "conditions": conditions,
                 "restrictions": restrictions,
                 "num_weeks": num_weeks,
+                "ethnicity": ethnicity,
+                "dietary_preference": dietary_preference,
                 "provider": "openai" if self.openai_diet_service.is_enabled() else "deterministic",
             },
         )
@@ -89,6 +93,7 @@ class DietPlanService:
         meals = await self._build_meals(
             plan.id, patient_id, allergens, conditions, restrictions, selected_favourites,
             num_weeks=num_weeks, progress_callback=progress_callback,
+            ethnicity=ethnicity, dietary_preference=dietary_preference,
         )
         for meal in meals:
             self.db.add(DietPlanMeal(**meal))
@@ -212,6 +217,8 @@ class DietPlanService:
         selected_favourites: list[str],
         num_weeks: int = 4,
         progress_callback: Callable[[int, int], None] | None = None,
+        ethnicity: str | None = None,
+        dietary_preference: str | None = None,
     ) -> list[dict]:
         meals: list[dict] = []
         sequence = 0
@@ -233,6 +240,8 @@ class DietPlanService:
                             restrictions,
                             selected_favourites,
                             assigned_this_week,
+                            ethnicity=ethnicity,
+                            dietary_preference=dietary_preference,
                         )
                         allergen_violations = self.allergen_service.validate_meal_allergens(candidate, allergens + restrictions)
                         repeat_violations = self.no_repeat_service.validate_no_repeats(candidate, assigned_this_week)
@@ -294,6 +303,8 @@ class DietPlanService:
         restrictions: list[str],
         selected_favourites: list[str],
         assigned_this_week: list[dict],
+        ethnicity: str | None = None,
+        dietary_preference: str | None = None,
     ) -> dict:
         if self.openai_diet_service.is_enabled():
             try:
@@ -306,6 +317,8 @@ class DietPlanService:
                     restrictions=restrictions,
                     selected_favourites=selected_favourites,
                     assigned_meals_this_week=[assigned["meal_name"] for assigned in assigned_this_week],
+                    ethnicity=ethnicity,
+                    dietary_preference=dietary_preference,
                 )
                 return self._ensure_meal_complete(meal, sequence)
             except Exception:
@@ -329,14 +342,25 @@ class DietPlanService:
                 "meal_name": f"Week {week} {meal_slot} Safe Quinoa Plate {day}-{sequence}",
                 "clinical_note": self._clinical_note(conditions, ["fallback allergen-safe meal"]),
                 "recipe_url": None,
+                "recipe_steps": None,
             },
             sequence,
         )
 
+    def _match_condition_rule(self, condition: str) -> dict:
+        """Fuzzy match a condition string against condition_rules keys."""
+        c = condition.lower().strip()
+        if c in self.condition_rules:
+            return self.condition_rules[c]
+        for key in self.condition_rules:
+            if key in c or c in key:
+                return self.condition_rules[key]
+        return {}
+
     def _medical_restrictions(self, conditions: list[str], medications: list[str]) -> list[str]:
         restrictions: list[str] = []
         for condition in conditions:
-            rule = self.condition_rules.get(condition, {})
+            rule = self._match_condition_rule(condition)
             restrictions.extend(rule.get("avoid", []))
             restrictions.extend(rule.get("limit", []))
         for medication in medications:

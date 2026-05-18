@@ -1,6 +1,6 @@
 import { Trash2, Upload, X } from 'lucide-react';
 import { useRef, useState } from 'react';
-import type { PatientPayload } from '../store/usePatientStore';
+import type { DietaryPreference, PatientPayload } from '../store/usePatientStore';
 
 const STEPS = ['Basic Info', 'Conditions', 'Medications', 'Allergens', 'Family History', 'Favourite Foods', 'Documents'];
 
@@ -29,13 +29,15 @@ export default function PatientStepForm({ onSubmit }: Props) {
   const [submitting, setSubmitting] = useState(false);
 
   // Step 0 — Basic info
-  const [firstName, setFirstName]   = useState('');
-  const [lastName,  setLastName]    = useState('');
-  const [dob,       setDob]         = useState('');
-  const [sex,       setSex]         = useState<'male' | 'female' | 'other' | ''>('');
-  const [heightCm,  setHeightCm]    = useState('');
-  const [weightKg,  setWeightKg]    = useState('');
-  const [notes,     setNotes]       = useState('');
+  const [firstName,         setFirstName]         = useState('');
+  const [lastName,          setLastName]           = useState('');
+  const [dob,               setDob]               = useState('');
+  const [sex,               setSex]               = useState<'male' | 'female' | 'other' | ''>('');
+  const [heightCm,          setHeightCm]          = useState('');
+  const [weightKg,          setWeightKg]          = useState('');
+  const [notes,             setNotes]             = useState('');
+  const [ethnicity,         setEthnicity]         = useState('');
+  const [dietaryPreference, setDietaryPreference] = useState<DietaryPreference | ''>('');
 
   // Step 1 — Conditions
   const [condInput,    setCondInput]   = useState('');
@@ -93,9 +95,30 @@ export default function PatientStepForm({ onSubmit }: Props) {
     setFamCondition(''); setFamRelation('');
   }
 
+  // Keywords blocked per dietary preference
+  const DIET_BLOCKED: Record<string, string[]> = {
+    vegan:       ['meat','chicken','beef','pork','lamb','turkey','fish','salmon','tuna','shrimp','prawn','dairy','milk','cheese','yogurt','butter','egg','eggs','honey','gelatin'],
+    vegetarian:  ['meat','chicken','beef','pork','lamb','turkey','fish','salmon','tuna','shrimp','prawn','gelatin'],
+    pescatarian: ['meat','chicken','beef','pork','lamb','turkey'],
+    flexitarian: [],
+  };
+
+  function isFoodBlockedByDiet(name: string): string | null {
+    if (!dietaryPreference) return null;
+    const lower = name.toLowerCase();
+    const blocked = DIET_BLOCKED[dietaryPreference] || [];
+    const hit = blocked.find((kw) => lower.includes(kw));
+    return hit ? `"${hit}" is not allowed for a ${dietaryPreference} diet` : null;
+  }
+
+  const [foodError, setFoodError] = useState('');
+
   function addFood() {
     const name = foodInput.trim();
     if (!name) return;
+    const dietError = isFoodBlockedByDiet(name);
+    if (dietError) { setFoodError(dietError); return; }
+    setFoodError('');
     setFavouriteFoods([...favouriteFoods, { name, preference_level: 5 }]);
     setFoodInput('');
   }
@@ -120,8 +143,10 @@ export default function PatientStepForm({ onSubmit }: Props) {
         ...(dob        ? { date_of_birth: dob }          : {}),
         ...(sex        ? { sex }                           : {}),
         ...(heightCm   ? { height_cm: Number(heightCm) }  : {}),
-        ...(weightKg   ? { weight_kg: Number(weightKg) }  : {}),
-        ...(notes      ? { notes }                         : {}),
+        ...(weightKg         ? { weight_kg: Number(weightKg) }              : {}),
+        ...(notes            ? { notes }                                     : {}),
+        ...(ethnicity        ? { ethnicity }                                 : {}),
+        ...(dietaryPreference ? { dietary_preference: dietaryPreference }   : {}),
         conditions:     conditions,
         medications:    medications,
         allergens:      allergens,
@@ -156,6 +181,42 @@ export default function PatientStepForm({ onSubmit }: Props) {
             </button>
           ))}
         </div>
+      </div>
+      <label>
+        Ethnicity / cultural background
+        <input
+          value={ethnicity}
+          onChange={(e) => setEthnicity(e.target.value)}
+          placeholder="e.g. South Asian, Thai, Mediterranean, Nigerian…"
+        />
+        <span style={{ fontSize: 11, color: 'var(--slate)', marginTop: 3, display: 'block' }}>
+          Used to incorporate culturally relevant ingredients and recipes into the plan.
+        </span>
+      </label>
+      <div>
+        <div className="section-kicker" style={{ marginBottom: 8 }}>Dietary preference</div>
+        <div className="radio-row" style={{ flexWrap: 'wrap' }}>
+          {(['vegan','vegetarian','pescatarian','flexitarian'] as const).map((d) => (
+            <button
+              key={d}
+              type="button"
+              className={dietaryPreference === d ? 'radio-option selected' : 'radio-option'}
+              onClick={() => setDietaryPreference(dietaryPreference === d ? '' : d)}
+            >
+              {d.charAt(0).toUpperCase() + d.slice(1)}
+            </button>
+          ))}
+        </div>
+        {dietaryPreference && (
+          <p style={{ fontSize: 12, color: 'var(--slate)', marginTop: 6 }}>
+            {{
+              vegan:       'No animal products — meat, fish, dairy, eggs, or honey.',
+              vegetarian:  'No meat or fish. Dairy and eggs are included.',
+              pescatarian: 'No meat or poultry. Fish and seafood are included.',
+              flexitarian: 'Mostly plant-based with occasional meat or fish.',
+            }[dietaryPreference]}
+          </p>
+        )}
       </div>
       <label>Clinical notes<textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any additional clinical context…" style={{ height: 80, resize: 'vertical', padding: '10px 12px' }} /></label>
     </div>,
@@ -218,12 +279,22 @@ export default function PatientStepForm({ onSubmit }: Props) {
 
     /* 5 — Favourite Foods */
     <div key="foods" className="form-grid">
+      {dietaryPreference && (
+        <p style={{ fontSize: 12, color: 'var(--slate)', background: 'var(--surface-soft)', borderRadius: 6, padding: '6px 10px' }}>
+          Diet: <strong style={{ textTransform: 'capitalize' }}>{dietaryPreference}</strong> — incompatible foods will be blocked automatically.
+        </p>
+      )}
       <div className="add-row">
-        <input value={foodInput} onChange={(e) => setFoodInput(e.target.value)} placeholder="Dal, Oatmeal, Salmon…"
-          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addFood(); } }} />
+        <input
+          value={foodInput}
+          onChange={(e) => { setFoodInput(e.target.value); setFoodError(''); }}
+          placeholder="Dal, Oatmeal, Salmon…"
+          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addFood(); } }}
+        />
         <button type="button" className="button-primary" onClick={addFood}>Add</button>
       </div>
-      <p className="empty-copy">Add 20–25 foods the patient enjoys. These are used when selecting dishes for diet plan generation.</p>
+      {foodError && <p className="error" style={{ marginTop: 0 }}>{foodError}</p>}
+      <p className="empty-copy">Add foods the patient enjoys — used when selecting dishes for diet plan generation.</p>
       <ChipList items={favouriteFoods} label={(f) => f.name} onRemove={(i) => setFavouriteFoods(favouriteFoods.filter((_, j) => j !== i))} />
     </div>,
 
