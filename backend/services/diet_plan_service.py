@@ -1,5 +1,6 @@
 import json
 import uuid
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -18,6 +19,13 @@ from services.openai_diet_service import OpenAIDietService
 from services.recipe_service import RecipeService
 
 MEAL_SLOTS = ["Breakfast", "Lunch", "Snack", "Dinner"]
+
+
+def _parse_num_weeks(plan_type: str) -> int:
+    """Extract week count from plan_type string e.g. '2-week' → 2, '4-week' → 4."""
+    if plan_type.startswith("2"):
+        return 2
+    return 4
 
 # Offset applied to sequence when regenerating a single meal so the replacement
 # dish is drawn from a different position in the BASE_DISHES rotation than the
@@ -49,11 +57,13 @@ class DietPlanService:
         patient_id: uuid.UUID,
         selected_favourites: list[str] | None = None,
         plan_type: str = "standard",
+        progress_callback: Callable[[int, int], None] | None = None,
     ) -> DietPlan:
         patient = await self.db.get(Patient, patient_id)
         if patient is None:
             raise ValueError("Patient not found")
         selected_favourites = selected_favourites or []
+        num_weeks = _parse_num_weeks(plan_type)
         profile = await self._get_or_build_profile(patient_id)
         allergens = list(profile.allergens or [])
         conditions = list(profile.conditions or [])
@@ -69,13 +79,17 @@ class DietPlanService:
             generation_metadata={
                 "conditions": conditions,
                 "restrictions": restrictions,
+                "num_weeks": num_weeks,
                 "provider": "openai" if self.openai_diet_service.is_enabled() else "deterministic",
             },
         )
         self.db.add(plan)
         await self.db.flush()
 
-        meals = await self._build_meals(plan.id, patient_id, allergens, conditions, restrictions, selected_favourites)
+        meals = await self._build_meals(
+            plan.id, patient_id, allergens, conditions, restrictions, selected_favourites,
+            num_weeks=num_weeks, progress_callback=progress_callback,
+        )
         for meal in meals:
             self.db.add(DietPlanMeal(**meal))
         plan.status = "draft"
@@ -196,10 +210,14 @@ class DietPlanService:
         conditions: list[str],
         restrictions: list[str],
         selected_favourites: list[str],
+        num_weeks: int = 4,
+        progress_callback: Callable[[int, int], None] | None = None,
     ) -> list[dict]:
         meals: list[dict] = []
         sequence = 0
-        for week in range(1, 5):
+        total = num_weeks * 7 * len(MEAL_SLOTS)
+        completed = 0
+        for week in range(1, num_weeks + 1):
             assigned_this_week: list[dict] = []
             for day in range(1, 8):
                 for meal_slot in MEAL_SLOTS:
@@ -237,6 +255,9 @@ class DietPlanService:
                         }
                     )
                     sequence += 1
+                    completed += 1
+                    if progress_callback:
+                        progress_callback(completed, total)
         return meals
 
     def _candidate_meal(

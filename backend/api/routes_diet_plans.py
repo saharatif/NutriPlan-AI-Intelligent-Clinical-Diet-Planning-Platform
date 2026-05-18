@@ -51,7 +51,26 @@ async def generation_status(
 ) -> dict[str, str | None]:
     await _assert_patient_owner(db, doctor.id, patient_id)
     result = AsyncResult(task_id, app=celery_app)
-    return {"task_id": task_id, "status": result.state.lower(), "plan_id": str(result.result) if result.successful() else None}
+    info = result.info if isinstance(result.info, dict) else {}
+    state = result.state
+    if state == "PROGRESS":
+        status_str = "generating"
+        progress = info.get("progress", 0)
+    elif state == "SUCCESS":
+        status_str = "success"
+        progress = 100
+    elif state == "FAILURE":
+        status_str = "failure"
+        progress = 0
+    else:
+        status_str = state.lower()
+        progress = 0
+    return {
+        "task_id": task_id,
+        "status": status_str,
+        "plan_id": str(result.result) if result.successful() else None,
+        "progress": progress,
+    }
 
 
 @router.get("/api/patients/{patient_id}/diet-plans", response_model=list[DietPlanListItem])

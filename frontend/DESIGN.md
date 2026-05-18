@@ -282,3 +282,54 @@ Two-column split:
 - Don't use box shadows on cards — background contrast handles depth
 - Don't use large display type — no element in the app needs font-size above 36px (auth showcase only)
 - Don't add hover states on non-interactive elements
+
+---
+
+## Plan Review — UI Patterns (added May 2026)
+
+### Draft Banner
+A full-width sticky banner renders at the top of the Plan Review page while a plan is in `draft` status. Amber tint (`#fffbeb`) with a bottom border (`#fde68a`). Contains a pulsing dot, a descriptive label, and the "Approve Plan" CTA. Stays pinned (`position: sticky; top: 0; z-index: 30`) so the approve action is always reachable without scrolling.
+
+### Week Tabs with Calorie Badge
+Each week tab displays a secondary badge showing the total kilocalories for that week (e.g. `14.2k kcal`). Badge uses `.week-tab-badge` — neutral on inactive tabs, teal-tinted on the active tab.
+
+### Meal Type Visual Differentiation
+Each meal card carries a 3px left border colour keyed to its meal slot:
+| Slot | Colour |
+|---|---|
+| Breakfast | `#f59e0b` (amber) |
+| Lunch | `#0d9488` (teal) |
+| Snack | `#8b5cf6` (purple) |
+| Dinner | `#3b82f6` (blue) |
+
+The calendar slot label row mirrors the same left-border colour (`.slot-breakfast`, `.slot-lunch`, etc.).
+
+### Macro Badges
+Replace plain `P / F / C` text with coloured pill badges:
+- `.macro-p` — blue (`#eff6ff` bg / `#2563eb` text) for protein  
+- `.macro-f` — amber (`#fffbeb` bg / `#d97706` text) for fat  
+- `.macro-c` — green (`#ecfdf5` bg / `#059669` text) for carbs  
+
+Used on meal cards, the daily totals row, and the detail panel.
+
+### Daily Totals Row
+The bottom row of `WeekCalendar` shows per-day calorie totals and macro badges. CSS classes: `.calendar-totals-label` and `.calendar-totals-cell`.
+
+### Hover Card
+`MealCard` renders an absolutely-positioned overlay (`.meal-hover-card`) on mouse-enter. Shows full meal name, first 3 ingredients, and two action buttons: **View details** (opens the slide-out panel) and **Swap meal** (triggers regeneration). Hover card sits above the grid row (`z-index: 40`).
+
+### Day Header Style
+Calendar day headers (`DAY 1` … `DAY 7`) use a light-blue tint (`#e0f2fe` bg / `#0369a1` text) to visually separate them from the slot labels and data cells.
+
+### Daily Nutrition Chart
+`DailyNutritionChart` renders below the calendar — a pure-SVG stacked bar chart. Each bar represents one day's macros scaled to total kcal contribution (protein × 4, fat × 9, carbs × 4). Blue = protein, amber = fat, green = carbs. Updates when the active week tab changes.
+
+---
+
+## Plan Generator — UI Patterns (added May 2026)
+
+### Plan Duration Selector
+A segmented control (`.segmented`) lets the doctor choose between 2-week and 4-week plan generation. The selection maps directly to the `plan_type` field sent to the backend (`"2-week"` or `"4-week"`).
+
+### Progress Donut
+Replaces the thin progress bar with an SVG donut (r=36, circumference≈226.2). The donut animates via `stroke-dashoffset` as real progress % arrives from the backend's `/status` endpoint. Centre label shows percentage during generation, "Done" on completion, estimated time ("~3m" / "~6m") before start. CSS: `.donut-svg`, `.donut-track`, `.donut-fill`, `.donut-label`, `.donut-section`.

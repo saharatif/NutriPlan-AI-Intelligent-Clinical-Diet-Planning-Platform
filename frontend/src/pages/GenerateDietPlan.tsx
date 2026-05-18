@@ -2,19 +2,47 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../lib/api';
 
-type StatusResponse = { status: string; plan_id: string | null };
+type StatusResponse = { status: string; plan_id: string | null; progress: number };
 
 const POLL_INTERVAL_MS = 2500;
-const POLL_MAX_ATTEMPTS = 120; // 5 minutes before giving up
+const POLL_MAX_ATTEMPTS = 200;
+
+const CIRCUMFERENCE = 2 * Math.PI * 36; // r=36
+
+function ProgressDonut({ progress, weeks }: { progress: number; weeks: number }) {
+  const offset = CIRCUMFERENCE * (1 - progress / 100);
+  const estimatedSecs = weeks === 2 ? 200 : 380;
+  const label = progress === 0
+    ? `~${Math.round(estimatedSecs / 60)}m`
+    : progress === 100
+    ? 'Done'
+    : `${progress}%`;
+
+  return (
+    <div className="donut-wrap">
+      <svg width="88" height="88" className="donut-svg">
+        <circle cx="44" cy="44" r="36" className="donut-track" />
+        <circle
+          cx="44" cy="44" r="36"
+          className="donut-fill"
+          strokeDasharray={CIRCUMFERENCE}
+          strokeDashoffset={offset}
+        />
+      </svg>
+      <span className="donut-label">{label}</span>
+    </div>
+  );
+}
 
 export default function GenerateDietPlan() {
   const { patientId } = useParams();
   const navigate = useNavigate();
-  const [planType, setPlanType] = useState('4-week');
+  const [weeks, setWeeks] = useState<2 | 4>(4);
   const [selectedFavourites, setSelectedFavourites] = useState<string[]>(['dal', 'oatmeal', 'salmon']);
   const [allergens, setAllergens] = useState<string[]>([]);
   const [status, setStatus] = useState<'idle' | 'generating' | 'complete' | 'error'>('idle');
-  const [statusLabel, setStatusLabel] = useState('Ready');
+  const [statusLabel, setStatusLabel] = useState('Ready to generate');
+  const [progress, setProgress] = useState(0);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -27,8 +55,10 @@ export default function GenerateDietPlan() {
   async function generate() {
     if (!patientId || status === 'generating') return;
     setStatus('generating');
-    setStatusLabel('Queuing generation…');
+    setProgress(0);
+    setStatusLabel('Queuing…');
 
+    const planType = `${weeks}-week`;
     const taskResponse = await api.post<{ task_id: string }>(
       `/patients/${patientId}/diet-plans/generate`,
       { plan_type: planType, selected_favourites: selectedFavourites }
@@ -43,13 +73,16 @@ export default function GenerateDietPlan() {
         const poll = await api.get<StatusResponse>(
           `/patients/${patientId}/diet-plans/generate/${taskId}/status`
         );
-        const { status: taskStatus, plan_id: planId } = poll.data;
+        const { status: taskStatus, plan_id: planId, progress: pct } = poll.data;
 
-        if (taskStatus === 'success' && planId) {
+        if (taskStatus === 'generating' || taskStatus === 'started') {
+          setProgress(pct ?? 0);
+        } else if (taskStatus === 'success' && planId) {
           clearInterval(pollRef.current!);
+          setProgress(100);
           setStatus('complete');
-          setStatusLabel('Complete');
-          navigate(`/diet-plans/${planId}/review`);
+          setStatusLabel('Complete!');
+          setTimeout(() => navigate(`/diet-plans/${planId}/review`), 600);
         } else if (taskStatus === 'failure') {
           clearInterval(pollRef.current!);
           setStatus('error');
@@ -66,24 +99,38 @@ export default function GenerateDietPlan() {
   }
 
   const favouriteOptions = ['dal', 'oatmeal', 'salmon', 'milk smoothie', 'peanut chutney', 'soy bowl'];
-  const progress = status === 'complete' ? 100 : status === 'generating' ? 65 : status === 'error' ? 0 : 10;
+  const isGenerating = status === 'generating';
 
   return (
     <main className="app-shell">
       <section className="content narrow">
         <div className="page-title">
-          <span className={`badge ${status === 'error' ? 'badge-warning' : status === 'complete' ? 'badge-success' : 'badge-warning'}`}>
-            {statusLabel}
-          </span>
-          <h1>Generate Plan</h1>
+          <h1>Generate Diet Plan</h1>
         </div>
+
         <div className="checkout-summary form-grid">
-          <label>Plan type
-            <select value={planType} onChange={(e) => setPlanType(e.target.value)} disabled={status === 'generating'}>
-              <option>1-week</option>
-              <option>4-week</option>
-            </select>
-          </label>
+          {/* Week selector */}
+          <div>
+            <div className="section-kicker" style={{ marginBottom: 8 }}>Plan duration</div>
+            <div className="segmented" role="radiogroup" aria-label="Plan weeks">
+              {([2, 4] as const).map((w) => (
+                <button
+                  key={w}
+                  type="button"
+                  className={weeks === w ? 'active' : ''}
+                  disabled={isGenerating}
+                  onClick={() => setWeeks(w)}
+                >
+                  {w} weeks
+                </button>
+              ))}
+            </div>
+            <p style={{ fontSize: 12, color: 'var(--slate)', marginTop: 6 }}>
+              {weeks === 2 ? 'Approx. 3–4 min to generate' : 'Approx. 6–8 min to generate'}
+            </p>
+          </div>
+
+          {/* Favourite foods */}
           <div className="form-section">
             <div className="section-kicker">Favourite foods</div>
             <div className="chip-row">
@@ -94,7 +141,7 @@ export default function GenerateDietPlan() {
                   <button
                     type="button"
                     className={selected ? 'pill-tab active' : 'pill-tab'}
-                    disabled={blocked || status === 'generating'}
+                    disabled={blocked || isGenerating}
                     key={food}
                     onClick={() => setSelectedFavourites(
                       selected ? selectedFavourites.filter((f) => f !== food) : [...selectedFavourites, food]
@@ -106,13 +153,32 @@ export default function GenerateDietPlan() {
               })}
             </div>
           </div>
-          <div className="progress-bar"><span style={{ width: `${progress}%` }} /></div>
+
+          {/* Progress donut */}
+          {(isGenerating || status === 'complete') && (
+            <div className="donut-section">
+              <ProgressDonut progress={progress} weeks={weeks} />
+              <div>
+                <div className="donut-status-label">{statusLabel}</div>
+                {isGenerating && (
+                  <div className="donut-sublabel">
+                    Generating {weeks * 7 * 4} meals with GPT-4o — please keep this tab open
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {status === 'error' && (
+            <p className="error">{statusLabel}</p>
+          )}
+
           <button
             className="button-primary"
-            disabled={status === 'generating'}
+            disabled={isGenerating}
             onClick={() => void generate()}
           >
-            {status === 'generating' ? 'Generating…' : 'Generate'}
+            {isGenerating ? 'Generating…' : status === 'complete' ? 'Generate Again' : 'Generate Plan'}
           </button>
         </div>
       </section>

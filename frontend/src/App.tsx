@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import DietPlan from './pages/DietPlan';
 import DietPlanReview from './pages/DietPlanReview';
@@ -14,7 +15,7 @@ function ProtectedRoute({ children }: { children: JSX.Element }) {
   const location = useLocation();
   if (loading) return <main className="screen">Loading...</main>;
   if (!session) return <Navigate to="/login" replace state={{ from: location }} />;
-  return children;
+  return <Layout>{children}</Layout>;
 }
 
 export default function App() {
