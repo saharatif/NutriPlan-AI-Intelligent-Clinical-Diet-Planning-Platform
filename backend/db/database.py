@@ -14,11 +14,14 @@ class Base(AsyncAttrs, DeclarativeBase):
 if not settings.DATABASE_URL:
     raise RuntimeError("DATABASE_URL is not set — cannot start without a database connection")
 
+_is_sqlite = settings.DATABASE_URL.startswith("sqlite")
+_connect_args = {} if _is_sqlite else {"statement_cache_size": 0}
+
 engine = create_async_engine(
     settings.DATABASE_URL,
     echo=settings.DEBUG,
     poolclass=NullPool,
-    connect_args={"statement_cache_size": 0},
+    connect_args=_connect_args,
 )
 
 AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
